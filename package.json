@@ -1,0 +1,36 @@
+{
+  "name": "express-mesto",
+  "version": "1.0.0",
+  "description": "бэкенд на NODE.JS, Express и MongoDB",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/escar85/express-mesto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/escar85/express-mesto/issues"
+  },
+  "homepage": "https://github.com/escar85/express-mesto#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "celebrate": "^13.0.3",
+    "express": "^4.17.1",
+    "express-winston": "^4.0.5",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.10.8",
+    "validator": "^13.1.17",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^7.9.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "nodemon": "^2.0.4"
+  }
+}
