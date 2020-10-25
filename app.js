@@ -1,9 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { celebrate, Joi, errors } = require('celebrate');
+const cors = require('cors');
 
 const router = require('./routes');
-const { login, createUser } = require('./controllers/users');
+const { login, createUser, getUserByToken } = require('./controllers/users');
 
 const auth = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -18,9 +19,19 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false
 });
 
+app.use(cors());
+
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`)
 });
+
+// app.use(function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", '*');
+//   res.header("Access-Control-Allow-Credentials", true);
+//   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS');
+//   res.header("Access-Control-Allow-Headers", 'Origin, Access-Control-Allow-Origin, Authorization, X-Requested-With, Content-Type, Accept, content-type, application/json');
+//   next();
+// });
 
 app.use(express.json());
 
@@ -34,27 +45,27 @@ app.get('/crash-test', () => {
 });
 
 // незащищеные маршруты
-app.post('/signin', celebrate({
+app.post('/sign-in', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(7)
   })
 }), login);
 
-app.post('/signup', celebrate({
+app.post('/sign-up', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(7),
-    name: Joi.string().required().min(2).max(30).empty('').default('Имя'),
-    about: Joi.string().required().min(2).max(30).empty('').default('О себе'),
-    avatar: Joi.string().required().domain().empty('').default('https://miro.medium.com/max/3600/1*HSisLuifMO6KbLfPOKtLow.jpeg')
+    password: Joi.string().required().min(7)
   })
 }), createUser);
+
+
 
 // миддлвэр авторизации
 app.use(auth);
 
 // защищенные маршруты
+app.get('/users/me', getUserByToken);
 app.use(router);
 
 

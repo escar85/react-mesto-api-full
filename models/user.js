@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const WrongCredentialsError = require('../middlewares/errors/wrong-credentials-error');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    default: 'О себе',
     minLength: 2,
     maxLength: 30,
   },
@@ -13,6 +15,7 @@ const userSchema = new mongoose.Schema({
   about: {
     type: String,
     required: true,
+    default: 'О себе',
     minLength: 2,
     maxLength: 30,
   },
@@ -20,6 +23,7 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     required: true,
+    default: 'https://miro.medium.com/max/3600/1*HSisLuifMO6KbLfPOKtLow.jpeg',
     validate: {
        validator(v) {
        return validator.isURL(v)
@@ -61,7 +65,6 @@ userSchema.statics.findUserByCredentials = function (email, password) {
           if (!matched) {
             return Promise.reject(new WrongCredentialsError('Неверные почта или пароль'));
           }
-
           return user;
         });
     });
