@@ -1,12 +1,13 @@
 const usersRouter = require('express').Router();
 const { getUsers, getUserById, updateProfile, updateAvatar } = require('../controllers/users');
 const { celebrate, Joi } = require('celebrate');
+const { isUrl } = require('validator');
 
 usersRouter.get('/users', getUsers);
 
 usersRouter.get('/users/:userId', celebrate({
   params: Joi.object().keys({
-    userId: Joi.string().alphanum()
+    userId: Joi.string().hex().length(24)
   }),
 }), getUserById);
 
@@ -19,7 +20,9 @@ usersRouter.patch('/users/me', celebrate({
 
 usersRouter.patch('/users/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required().domain()
+    avatar: Joi.string().required().custom((value, helpers) => {
+      if(!isUrl(value)) return helpers.error('Невалидная ссылка. Проверьте путь к изображению')
+    })
   })
 }), updateAvatar);
 

@@ -1,13 +1,15 @@
 const jwt = require('jsonwebtoken');
+const { NODE_ENV, JWT_SECRET } = process.env;
+const WrongCredentialsError = require('./errors/wrong-credentials-error');
 
-module.exports = (req, res, next) => {
+const auth = (req, res, next) => {
 
+  try {
   // заголовок авторизации
   const { authorization } = req.headers;
-
   // если загаловка нет или он не начинается с "Bearer" - вернем ошибку авторизации
   if (!authorization && !authorization.startsWith('Bearer ')) {
-    return res.status(401).send({ message: 'Необходима авторизация' });
+    throw new WrongCredentialsError('Необходима аторизация')
   }
 
   // извлекаем токен
@@ -16,13 +18,14 @@ module.exports = (req, res, next) => {
 
   // верифицируем токен с помощью метода "verify" и обрабатываем ошибку
   try {
-    payload = jwt.verify(token, 'f385894f20935f1d2fbeae7c08149367c7c867633e149850056bc3e1149695a1');
+    payload = jwt.verify(token, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret');
   } catch (err) {
-    return res.status(401).send({ message: 'Необходима авторизация' });
+    throw new WrongCredentialsError('Необходима аторизация')
   }
-
-
-  req.user = payload;
+  req.user = payload
+} catch (err) { throw new WrongCredentialsError('Необходима аторизация') }
 
   next();
 }
+
+module.exports = auth;

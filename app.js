@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const { celebrate, Joi, errors } = require('celebrate');
@@ -5,6 +6,7 @@ const cors = require('cors');
 
 const router = require('./routes');
 const { login, createUser, getUserByToken } = require('./controllers/users');
+const notFoundError = require('./middlewares/errors/not-found-error');
 
 const auth = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -25,14 +27,6 @@ app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`)
 });
 
-// app.use(function(req, res, next) {
-//   res.header("Access-Control-Allow-Origin", '*');
-//   res.header("Access-Control-Allow-Credentials", true);
-//   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS');
-//   res.header("Access-Control-Allow-Headers", 'Origin, Access-Control-Allow-Origin, Authorization, X-Requested-With, Content-Type, Accept, content-type, application/json');
-//   next();
-// });
-
 app.use(express.json());
 
 app.use(requestLogger);
@@ -45,21 +39,19 @@ app.get('/crash-test', () => {
 });
 
 // незащищеные маршруты
-app.post('/sign-in', celebrate({
+app.post('/signin', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(7)
   })
 }), login);
 
-app.post('/sign-up', celebrate({
+app.post('/signup', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(7)
   })
 }), createUser);
-
-
 
 // миддлвэр авторизации
 app.use(auth);
@@ -68,9 +60,8 @@ app.use(auth);
 app.get('/users/me', getUserByToken);
 app.use(router);
 
-
-app.all('*', (req, res) => {
-  res.status(404).send({ message: '«Запрашиваемый ресурс не найден»' });
+app.all('*', (req, res, next) => {
+  next(new notFoundError('Запрашиваемый ресурс не найден'))
 });
 
 app.use(errorLogger);
@@ -92,8 +83,3 @@ app.use((err, req, res, next) => {
         : message
     });
 });
-
-
-
-
-// NOT A SUPER-SECRET-KEY f385894f20935f1d2fbeae7c08149367c7c867633e149850056bc3e1149695a1

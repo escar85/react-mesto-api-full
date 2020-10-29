@@ -1,8 +1,10 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const NotFoundError = require('../middlewares/errors/not-found-error');
+const { NODE_ENV, JWT_SECRET } = process.env;
 const WrongInputDataError = require('../middlewares/errors/wrong-input-data-error');
+const WrongCredentialsError = require('../middlewares/errors/wrong-credentials-error');
+const MongoError = require('../middlewares/errors/mongo-error');
 
 const getUsers = (req, res, next) => {
   User.find({})
@@ -11,12 +13,8 @@ const getUsers = (req, res, next) => {
 }
 
 const getUserById = (req, res, next) => {
-  User.findById(req.params.userId)
+  User.findById(req.params.userId).orFail(new WrongInputDataError('Пользователь с таким id отсутствует'))
     .then(user => res.send({ data: user }))
-    .catch(err => {
-      if (err.name === 'CastError') return new NotFoundError('Пользователь с таким id отсутствует')
-      console.log(err);
-    })
     .catch(next)
 }
 
@@ -25,16 +23,22 @@ const createUser = (req, res, next) => {
   // bcrypt.hash хэшируем пароль, добавляем соль "10"
   bcrypt.hash(req.body.password, 10)
     .then(hash => User.create({
-      // name: req.body.name,
-      // about: req.body.about,
-      // avatar: req.body.avatar,
       email: req.body.email,
       password: hash
     }))
-    .then(user => res.send({ data: user }))
-    .catch(err => {
-      if (err.name === 'ValidationError') return new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
-      console.log(err);
+    .then((user) => {
+      const newUser = user;
+      newUser.password = '';
+      res.send({ data: newUser });
+    })
+    .catch((err) => {
+      console.log(err.status)
+      if (err.name === 'ValidationError') {
+        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
+      } else if (err.name === 'MongoError' || err.code === 11000) {
+        throw new MongoError('Пользователь с таким E-Mail уже зарегистрирован')
+      }
+      throw new Error(err);
     })
     .catch(next);
 }
@@ -50,8 +54,10 @@ const updateProfile = (req, res, next) => {
   })
     .then(user => res.send({ data: user }))
     .catch(err => {
-      if (err.name === 'ValidationError') return new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
-      console.log(err);
+      if (err.name === 'ValidationError') {
+        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
+      }
+      throw new Error(err);
     })
     .catch(next);
 }
@@ -64,18 +70,23 @@ const updateAvatar = (req, res, next) => {
   })
     .then(user => res.send({ data: user }))
     .catch(err => {
-      if (err.name === 'ValidationError') return new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
-      console.log(err);
+      if (err.name === 'ValidationError') {
+        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.')
+      }
+      throw new Error(err);
     })
     .catch(next);
 }
 
-const login = (req, res, next ) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
       // создаем токен
-      const token = jwt.sign({ _id: user._id }, 'f385894f20935f1d2fbeae7c08149367c7c867633e149850056bc3e1149695a1', { expiresIn: '7d' });
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        { expiresIn: '7d' });
 
       res.send({ token });
     })
@@ -86,27 +97,21 @@ const getUserByToken = (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization && !authorization.startsWith('Bearer ')) {
-    return res.status(401).send({ message: 'Необходима авторизация' });
+    throw new WrongCredentialsError('Необходима авторизация')
   }
 
   const token = authorization.replace('Bearer ', '');
   let payload;
 
   try {
-    payload = jwt.verify(token, 'f385894f20935f1d2fbeae7c08149367c7c867633e149850056bc3e1149695a1');
+    payload = jwt.verify(token, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret');
   } catch (err) {
-    return res.status(401).send({ message: 'Необходима авторизация' });
+    throw new WrongCredentialsError('Необходима авторизация');
   }
 
-  console.log(payload);
-
-  User.findById(payload)
-  .then(user => res.send({ data: user }))
-  .catch(err => {
-    if (err.name === 'CastError') return new NotFoundError('Пользователь с таким id отсутствует')
-    console.log(err);
-  })
-  .catch(next)
+  User.findById(payload).orFail(new WrongInputDataError('Пользователь с таким id отсутствует'))
+    .then(user => res.send({ data: user }))
+    .catch(next)
 }
 
 module.exports = {

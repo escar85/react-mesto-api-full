@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    default: 'О себе',
+    default: 'Ваше имя',
     minLength: 2,
     maxLength: 30,
   },
@@ -45,7 +45,6 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minLength: 5,
     select: false
   }
 })

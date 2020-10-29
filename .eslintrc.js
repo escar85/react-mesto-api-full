@@ -5,8 +5,6 @@ module.exports = {
         "node": true
     },
     "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended",
         "airbnb-base"
     ],
     "parserOptions": {
@@ -17,9 +15,8 @@ module.exports = {
         "sourceType": "module"
     },
     "plugins": [
-        "react"
     ],
     "rules": {
-        "allow": ["_id"]
+        "allow": "_id"
     }
 };
