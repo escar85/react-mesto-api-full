@@ -9,7 +9,7 @@ const auth = (req, res, next) => {
     const { authorization } = req.headers;
     // если загаловка нет или он не начинается с "Bearer" - вернем ошибку авторизации
     if (!authorization && !authorization.startsWith('Bearer ')) {
-      throw new WrongCredentialsError('Необходима аторизация');
+      throw new WrongCredentialsError('Необходима авторизация');
     }
 
     // извлекаем токен
@@ -20,10 +20,10 @@ const auth = (req, res, next) => {
     try {
       payload = jwt.verify(token, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret');
     } catch (err) {
-      throw new WrongCredentialsError('Необходима аторизация');
+      throw new WrongCredentialsError('Необходима авторизация');
     }
     req.user = payload;
-  } catch (err) { throw new WrongCredentialsError('Необходима аторизация'); }
+  } catch (err) { throw new WrongCredentialsError('Необходима авторизация'); }
 
   next();
 };
