@@ -15,27 +15,27 @@ const cardSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return validator.isURL(v)
-      }
-    }
+        return validator.isURL(v);
+      },
+    },
   },
 
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user',
-    required: true
+    required: true,
   },
 
   likes: [{
     default: [],
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'user'
+    ref: 'user',
   }],
 
   createdAt: {
     type: Date,
-    default: Date.now
-  }
-})
+    default: Date.now,
+  },
+});
 
 module.exports = mongoose.model('card', cardSchema);

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-const WrongCredentialsError = require('../middlewares/errors/wrong-credentials-error');
 const bcrypt = require('bcryptjs');
+const WrongCredentialsError = require('../middlewares/errors/wrong-credentials-error');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -25,10 +25,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: 'https://miro.medium.com/max/3600/1*HSisLuifMO6KbLfPOKtLow.jpeg',
     validate: {
-       validator(v) {
-       return validator.isURL(v)
-      }
-    }
+      validator(v) {
+        return validator.isURL(v);
+      },
+    },
   },
 
   email: {
@@ -37,18 +37,17 @@ const userSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator(v) {
-        return validator.isEmail(v)
-      }
-    }
+        return validator.isEmail(v);
+      },
+    },
   },
 
   password: {
     type: String,
     required: true,
-    select: false
-  }
-})
-
+    select: false,
+  },
+});
 
 // находим пользователя по email и проверяем пароль
 userSchema.statics.findUserByCredentials = function (email, password) {

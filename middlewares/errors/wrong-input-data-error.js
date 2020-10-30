@@ -1,4 +1,3 @@
-
 class WrongInputDataError extends Error {
   constructor(message) {
     super(message);
