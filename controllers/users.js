@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
-const WrongInputDataError = require('../middlewares/errors/wrong-input-data-error');
 const WrongCredentialsError = require('../middlewares/errors/wrong-credentials-error');
 const MongoError = require('../middlewares/errors/mongo-error');
+const NotFoundError = require('../middlewares/errors/not-found-error');
 
 const getUsers = (req, res, next) => {
   User.find({})
@@ -14,7 +14,7 @@ const getUsers = (req, res, next) => {
 };
 
 const getUserById = (req, res, next) => {
-  User.findById(req.params.userId).orFail(new WrongInputDataError('Пользователь с таким id отсутствует'))
+  User.findById(req.params.userId).orFail(new NotFoundError('Пользователь с таким id отсутствует'))
     .then((user) => res.send({ data: user }))
     .catch(next);
 };
@@ -32,9 +32,7 @@ const createUser = (req, res, next) => {
       res.send({ data: newUser });
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.');
-      } else if (err.name === 'MongoError' || err.code === 11000) {
+      if (err.name === 'MongoError' || err.code === 11000) {
         throw new MongoError('Пользователь с таким E-Mail уже зарегистрирован');
       }
       throw new Error(err);
@@ -50,14 +48,8 @@ const updateProfile = (req, res, next) => {
   }, {
     new: true,
     runValidators: true,
-  })
+  }).orFail(new NotFoundError('Пользователь отсутствует, обратитесь в поддержку'))
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.');
-      }
-      throw new Error(err);
-    })
     .catch(next);
 };
 
@@ -66,20 +58,14 @@ const updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { avatar }, {
     new: true,
     runValidators: true,
-  })
+  }).orFail(new NotFoundError('Пользователь отсутствует, обратитесь в поддержку'))
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        throw new WrongInputDataError('Ошибка валидации. Проверьте введенные данные.');
-      }
-      throw new Error(err);
-    })
     .catch(next);
 };
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  return User.findUserByCredentials(email, password)
+  return User.findUserByCredentials(email, password).orFail(new NotFoundError('Пользователь отсутствует. Необходимо зарегистрироваться'))
     .then((user) => {
       // создаем токен
       const token = jwt.sign(
@@ -109,7 +95,7 @@ const getUserByToken = (req, res, next) => {
     throw new WrongCredentialsError('Необходима авторизация');
   }
 
-  User.findById(payload).orFail(new WrongInputDataError('Пользователь с таким id отсутствует'))
+  User.findById(payload).orFail(new NotFoundError('Пользователь с таким id отсутствует'))
     .then((user) => res.send({ data: user }))
     .catch(next);
 };

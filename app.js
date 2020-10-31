@@ -23,9 +23,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 
 app.use(cors());
 
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
-});
+app.listen(PORT);
 
 app.use(express.json());
 
@@ -70,6 +68,7 @@ app.use(errorLogger);
 app.use(errors());
 
 // централизованная обработка ошибок. принимает на вход аргумент-ошибку со статусом и сообщением
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   // если статус не пришел, выставляем по умолчанию ошибку сервера
   const { statusCode = 500, message } = err;
